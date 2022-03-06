@@ -9,8 +9,26 @@ window.createMap = function () {
     map.addDefaultLayer(SMap.DEF_TURIST).enable()
     map.addDefaultControls()
 
-    let sync = new SMap.Control.Sync({bottomSpace: 30})
+    let sync = new SMap.Control.Sync({})
     map.addControl(sync)
+
+    map.addDefaultLayer(SMap.DEF_OPHOTO);
+    map.addDefaultLayer(SMap.DEF_OPHOTO0203);
+    map.addDefaultLayer(SMap.DEF_OPHOTO0406);
+    map.addDefaultLayer(SMap.DEF_TURIST);
+    map.addDefaultLayer(SMap.DEF_TURIST_WINTER);
+    map.addDefaultLayer(SMap.DEF_HISTORIC);
+    map.addDefaultLayer(SMap.DEF_BASE).enable();
+
+    let layerSwitch = new SMap.Control.Layer({width: 65, items: 4, page: 4});
+    layerSwitch.addDefaultLayer(SMap.DEF_BASE);
+    layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO);
+    layerSwitch.addDefaultLayer(SMap.DEF_TURIST);
+    layerSwitch.addDefaultLayer(SMap.DEF_TURIST_WINTER);
+    layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0406);
+    layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0203);
+    layerSwitch.addDefaultLayer(SMap.DEF_HISTORIC);
+    map.addControl(layerSwitch, {left:"8px", top:"40px"});
 
     let markersLayer = new SMap.Layer.Marker()
     map.addLayer(markersLayer)
@@ -69,6 +87,6 @@ window.createMap = function () {
         gpx.enable()
         gpx.fit()
     }
-    xhttp.open("GET", "http://localhost:8080/list/gpx/" + trackerId, true)
+    xhttp.open("GET", "/list/gpx/" + trackerId, true)
     xhttp.send()
 }

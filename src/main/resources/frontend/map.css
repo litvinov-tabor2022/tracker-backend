@@ -1,6 +1,13 @@
+* {
+    font-family: Arial, sans-serif;
+}
+
 body {
     padding: 0;
     margin: 0;
+
+    font-family: Arial, sans-serif;
+    color: black;
 }
 
 div#map {
@@ -8,4 +15,48 @@ div#map {
     margin: 0;
     width: 100%;
     height: 100vh;
+}
+
+a#back {
+    position: absolute;
+    top: 5px;
+    left: 8px;
+
+    display: block;
+    width: 97px;
+    height: 20px;
+    padding: 5px 8px 1px;
+
+    /*inset: 29px auto auto 8px;*/
+
+    border: 1px solid rgba(107, 117, 128, 0.3);
+    border-radius: 2px;
+
+    color: #6b7580;
+    background-color: white;
+
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    z-index: 10000000;
+    visibility: visible;
+}
+
+span#back-icon {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 6px;
+    top: 5px;
+
+    opacity: 50%;
+
+    background-image: url("arrow_back_icon.png");
+    background-size: 15px 15px;
+    background-blend-mode: lighten;
+    background-repeat: no-repeat;
 }
