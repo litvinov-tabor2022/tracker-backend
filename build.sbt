@@ -15,15 +15,18 @@ lazy val root = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
+      Dependencies.circeGenericExtras,
+      Dependencies.circeLiteral,
+      Dependencies.circeParser,
+      Dependencies.http4sCirce,
+      Dependencies.mqttClient,
+      Dependencies.mysql,
+      Dependencies.log4cats,
       Dependencies.sstBundleMonixHttp4sBlaze,
-      Dependencies.sstHttp4sClientBlazePureConfig,
-      Dependencies.sstHttp4sClientMonixCatcap,
-      Dependencies.sstMonixCatnapPureConfig,
       Dependencies.sstDoobieHikariPureConfig,
       Dependencies.sstDoobieHikari,
       Dependencies.sstFlywayPureConfig,
-      Dependencies.sstJvm,
-      Dependencies.doobie
+      Dependencies.sstJvm
     ),
     name := "tracker-backend"
   )
