@@ -1,5 +1,7 @@
 package cz.jenda.tracker
 
+import java.util.concurrent.{ForkJoinPool, TimeUnit}
+
 import cats.effect.{Clock, Resource}
 import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.doobie.DoobieHikariModule
@@ -13,7 +15,6 @@ import cz.jenda.tracker.module.{Http4sRoutingModule, MqttModule}
 import monix.eval.Task
 import org.http4s.server.Server
 
-import java.util.concurrent.{ForkJoinPool, TimeUnit}
 import scala.concurrent.ExecutionContext
 
 object Main extends MonixServerApp {
@@ -37,7 +38,7 @@ object Main extends MonixServerApp {
       dao = new Dao(doobieTransactor)
       logic = new EventsLogic(dao)
       sub <- MqttModule.make(config.mqtt, logic.saveEvent)
-      routingModule = new Http4sRoutingModule(dao)
+      routingModule = new Http4sRoutingModule(dao, executorModule.blocker)
       server <- Http4sBlazeServerModule.make[Task](config.server, routingModule.router, executorModule.executionContext)
       _ <- Resource.eval(sub.connectAndAwait)
     } yield server

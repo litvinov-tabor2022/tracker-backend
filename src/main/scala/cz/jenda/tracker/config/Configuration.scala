@@ -22,7 +22,7 @@ object Configuration {
   implicit val reader: ConfigReader[Configuration] = deriveReader
 }
 
-case class MqttConfiguration(
+final case class MqttConfiguration(
     host: String,
     port: Int,
     ssl: Boolean,
