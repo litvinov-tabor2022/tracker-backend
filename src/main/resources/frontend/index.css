@@ -17,14 +17,15 @@ div#content {
 
 div#content a {
     display: block;
-    width: max-content;
-    /*height: 20px;*/
+    width: 250px;
     padding: 5px;
+    margin: 5px;
     border: 1px solid black;
     border-radius: 3px;
 
     color: black;
     text-decoration: none;
+    text-align: center;
 }
 
 div#content a:hover {

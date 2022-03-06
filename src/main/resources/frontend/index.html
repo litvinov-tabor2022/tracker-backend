@@ -14,8 +14,23 @@
 </head>
 
 <body>
-<div id="content">
-    <a href="map.html?tracker=123">Mapa pro tracker 123</a>
-</div>
+<div id="content"></div>
+<script type="application/javascript">
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function () {
+        let json = JSON.parse(this.responseText)
+
+        for (let i = 0; i < json.length; i++) {
+            let tracker = json[i];
+
+            document.getElementById("content").innerHTML +=
+                '<a href="map.html?tracker=' + tracker.id + '">Mapa pro tracker ' + tracker.id + ' ('+tracker.name+')</a>'
+        }
+
+        console.log(json)
+    }
+    xhttp.open("GET", "http://localhost:8080/trackers-list", true)
+    xhttp.send()
+</script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import com.avast.sst.http4s.server.Http4sRouting
 import cz.jenda.tracker.{Dao, GpxGenerator}
 import io.circe.syntax._
 import monix.eval.Task
+import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{Header, HttpApp, HttpRoutes, Response}
@@ -15,6 +16,18 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
 
   private val routes = HttpRoutes.of[Task] {
     case GET -> Root / "status" => Ok("OK")
+
+    case GET -> Root / "trackers-list" =>
+      logger.info(s"Listing trackers")
+      dao
+        .listTrackers()
+        .flatMap(Ok(_))
+        .map(
+          _.withHeaders(
+            Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json")),
+            Header.ToRaw.keyValuesToRaw(("Access-Control-Allow-Origin", "*"))
+          )
+        )
 
     case GET -> Root / "list" / "json" / IntVar(trackerId) =>
       logger.info(s"Listing positions (as JSON) for tracker ID $trackerId") >>
