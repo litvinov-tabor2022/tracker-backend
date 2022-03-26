@@ -3,11 +3,12 @@ window.loadMap = function () {
     Loader.load(null, null, createMap)
 }
 
+let map;
 let markersLayer;
 
 window.createMap = function () {
     let center = SMap.Coords.fromWGS84(14.41790, 50.12655)
-    let map = new SMap(JAK.gel("map"), center, 13)
+    map = new SMap(JAK.gel("map"), center, 13)
     map.addDefaultLayer(SMap.DEF_TURIST).enable()
     map.addDefaultControls()
 
@@ -15,11 +16,7 @@ window.createMap = function () {
     map.addControl(sync)
 
     map.addDefaultLayer(SMap.DEF_OPHOTO);
-    map.addDefaultLayer(SMap.DEF_OPHOTO0203);
-    map.addDefaultLayer(SMap.DEF_OPHOTO0406);
     map.addDefaultLayer(SMap.DEF_TURIST);
-    map.addDefaultLayer(SMap.DEF_TURIST_WINTER);
-    map.addDefaultLayer(SMap.DEF_HISTORIC);
     map.addDefaultLayer(SMap.DEF_BASE).enable();
 
     let layerSwitch = new SMap.Control.Layer({width: 65, items: 4, page: 4});
@@ -60,8 +57,9 @@ window.createMap = function () {
             let lon = wpt.getAttribute("lon")
             let visited = wpt.getAttribute("visited")
             let color = visited === "true" ? "blue" : "red"
+            let img = SMap.CONFIG.img + "/marker/drop-" + color + ".png"
 
-            makeWaypoint(lat, lon, name, color)
+            markersLayer.addMarker(makeMarker(lat, lon, (i + 1).toString(), name, img))
         }
 
         // remove waypoints so they're not rendered twice
@@ -69,6 +67,10 @@ window.createMap = function () {
             let wpt = wpts[0]
             wpt.parentNode.removeChild(wpt)
         }
+
+        // waypoint representing current position
+        let pts = xmlDoc.getElementsByTagName("trkpt")
+        markersLayer.addMarker(makeMarkerFromTrackpoint(pts[pts.length - 1]))
 
         // pass the rest to draw the line
         let gpx = new SMap.Layer.GPX(xmlDoc)
@@ -80,13 +82,13 @@ window.createMap = function () {
     xhttp.send()
 }
 
-function makeWaypoint(lat, lon, name, color) {
+function makeMarker(lat, lon, title, text, img) {
     let card = new SMap.Card()
-    card.getHeader().innerHTML = "<strong>" + name + "</strong>"
+    card.getHeader().innerHTML = "<strong>" + text + "</strong>"
     card.getBody().innerHTML = ""
 
     let markerContent = JAK.mel("div")
-    let pic = JAK.mel("img", {src: SMap.CONFIG.img + "/marker/drop-" + color + ".png"})
+    let pic = JAK.mel("img", {src: img})
     markerContent.appendChild(pic)
 
     let markerTitle = JAK.mel("div", {}, {
@@ -98,11 +100,26 @@ function makeWaypoint(lat, lon, name, color) {
         color: "white",
         fontWeight: "bold"
     })
-    markerTitle.innerHTML = (i + 1).toString()
+    markerTitle.innerHTML = title
     markerContent.appendChild(markerTitle)
 
     let coords = SMap.Coords.fromWGS84(lon, lat);
     let marker = new SMap.Marker(coords, null, {url: markerContent});
     marker.decorate(SMap.Marker.Feature.Card, card)
-    markersLayer.addMarker(marker)
+    return marker
+}
+
+function makeMarkerFromTrackpoint(trkpt) {
+    let text = trkpt.getElementsByTagName("time")[0].innerHTML
+
+    let lat = trkpt.getAttribute("lat")
+    let lon = trkpt.getAttribute("lon")
+
+    let marker = makeMarker(lat, lon, "", text, "/walking_icon.png")
+
+    // TODO anchor to center
+    // let options = {anchor: {left: 0.5, top: 0.5}}
+    // marker.decorate(SMap.Marker.Feature.RelativeAnchor, options)
+
+    return marker
 }

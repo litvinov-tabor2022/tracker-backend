@@ -29,7 +29,7 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
   }
 
   def listCoordinatesFor(trackerId: Int): fs2.Stream[Task, Coordinates] = {
-    sql"""select * from coordinates where tracker_id = $trackerId""".query[Coordinates].stream.transact(doobieTransactor)
+    sql"""select * from coordinates where tracker_id = $trackerId order by time""".query[Coordinates].stream.transact(doobieTransactor)
   }
 
   def listWaypointsFor(trackerId: Int): Task[List[Waypoint]] = {
