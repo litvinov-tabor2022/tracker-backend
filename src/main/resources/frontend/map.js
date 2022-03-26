@@ -3,6 +3,8 @@ window.loadMap = function () {
     Loader.load(null, null, createMap)
 }
 
+let markersLayer;
+
 window.createMap = function () {
     let center = SMap.Coords.fromWGS84(14.41790, 50.12655)
     let map = new SMap(JAK.gel("map"), center, 13)
@@ -28,9 +30,9 @@ window.createMap = function () {
     layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0406);
     layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0203);
     layerSwitch.addDefaultLayer(SMap.DEF_HISTORIC);
-    map.addControl(layerSwitch, {left:"8px", top:"40px"});
+    map.addControl(layerSwitch, {left: "8px", top: "40px"});
 
-    let markersLayer = new SMap.Layer.Marker()
+    markersLayer = new SMap.Layer.Marker()
     map.addLayer(markersLayer)
     markersLayer.enable()
 
@@ -47,8 +49,8 @@ window.createMap = function () {
     xhttp.onload = function () {
         let xmlDoc = JAK.XML.createDocument(this.responseText)
 
+        // draw all waypoints
         let wpts = xmlDoc.getElementsByTagName("wpt")
-
         for (let i = 0; i < wpts.length; i++) {
             let wpt = wpts[i]
 
@@ -57,31 +59,18 @@ window.createMap = function () {
             let lat = wpt.getAttribute("lat")
             let lon = wpt.getAttribute("lon")
             let visited = wpt.getAttribute("visited")
+            let color = visited === "true" ? "blue" : "red"
 
-            let card = new SMap.Card()
-            card.getHeader().innerHTML = "<strong>"+ name +"</strong>"
-            card.getBody().innerHTML = ""
-
-            let markerContent = JAK.mel("div")
-            let pic = JAK.mel("img", {src:SMap.CONFIG.img+"/marker/drop-"+(visited === "true" ? "blue":"red")+".png"})
-            markerContent.appendChild(pic)
-
-            let markerTitle = JAK.mel("div", {}, {position:"absolute", left:"0px", top:"2px", textAlign:"center", width:"22px", color:"white", fontWeight:"bold"})
-            markerTitle.innerHTML = (i+1).toString()
-            markerContent.appendChild(markerTitle)
-
-            let coords = SMap.Coords.fromWGS84(lon, lat);
-            let marker = new SMap.Marker(coords, null, {url:markerContent});
-            marker.decorate(SMap.Marker.Feature.Card, card)
-            markersLayer.addMarker(marker)
+            makeWaypoint(lat, lon, name, color)
         }
 
-        // remove so it's not rendered twice
+        // remove waypoints so they're not rendered twice
         while (wpts.length > 0) {
             let wpt = wpts[0]
             wpt.parentNode.removeChild(wpt)
         }
 
+        // pass the rest to draw the line
         let gpx = new SMap.Layer.GPX(xmlDoc)
         map.addLayer(gpx)
         gpx.enable()
@@ -89,4 +78,31 @@ window.createMap = function () {
     }
     xhttp.open("GET", "/list/gpx/" + trackerId, true)
     xhttp.send()
+}
+
+function makeWaypoint(lat, lon, name, color) {
+    let card = new SMap.Card()
+    card.getHeader().innerHTML = "<strong>" + name + "</strong>"
+    card.getBody().innerHTML = ""
+
+    let markerContent = JAK.mel("div")
+    let pic = JAK.mel("img", {src: SMap.CONFIG.img + "/marker/drop-" + color + ".png"})
+    markerContent.appendChild(pic)
+
+    let markerTitle = JAK.mel("div", {}, {
+        position: "absolute",
+        left: "0px",
+        top: "2px",
+        textAlign: "center",
+        width: "22px",
+        color: "white",
+        fontWeight: "bold"
+    })
+    markerTitle.innerHTML = (i + 1).toString()
+    markerContent.appendChild(markerTitle)
+
+    let coords = SMap.Coords.fromWGS84(lon, lat);
+    let marker = new SMap.Marker(coords, null, {url: markerContent});
+    marker.decorate(SMap.Marker.Feature.Card, card)
+    markersLayer.addMarker(marker)
 }
