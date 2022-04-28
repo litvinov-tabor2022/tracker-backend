@@ -15,7 +15,7 @@ object GpxGenerator {
   }
 
   private def trackPoint(coords: Coordinates): String = {
-    s"""      <trkpt lat="${coords.lat}" lon="${coords.lon}">
+    s"""      <trkpt lat="${coords.lat}" lon="${coords.lon}" batt="${coords.battery}">
        |        <ele>${coords.alt}</ele>
        |        <time>${coords.time}Z</time>
        |      </trkpt>

@@ -110,12 +110,15 @@ function makeMarker(lat, lon, title, text, img) {
 }
 
 function makeMarkerFromTrackpoint(trkpt) {
-    let text = trkpt.getElementsByTagName("time")[0].innerHTML
+    let time = trkpt.getElementsByTagName("time")[0].innerHTML
 
     let lat = trkpt.getAttribute("lat")
     let lon = trkpt.getAttribute("lon")
+    let batt = trkpt.getAttribute("batt")
 
-    let marker = makeMarker(lat, lon, "", text, "/walking_icon.png")
+    console.log("Last position: time " + time + " lat=" + lat + ", lon=" + lon + ", batt=" + batt)
+
+    let marker = makeMarker(lat, lon, "", time + ", batt: " + batt, "/walking_icon.png")
 
     // TODO anchor to center
     // let options = {anchor: {left: 0.5, top: 0.5}}
