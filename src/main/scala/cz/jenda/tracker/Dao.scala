@@ -12,8 +12,8 @@ import java.time.LocalDateTime
 class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
   def save(nc: Coordinates): Task[Unit] = {
     import nc._
-    sql"""insert into tracker.coordinates (tracker_id, time, lat, lon, alt)
-         values ($trackerId, $time, $lat, $lon, $alt)""".update.run.transact(doobieTransactor).as(())
+    sql"""insert into tracker.coordinates (tracker_id, time, lat, lon, alt, battery)
+         values ($trackerId, $time, $lat, $lon, $alt, $battery)""".update.run.transact(doobieTransactor).as(())
   }
 
   def listTrackers(): Task[List[Tracker]] = {
@@ -42,7 +42,7 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
   }
 }
 
-final case class Coordinates(id: Int, trackerId: Int, time: LocalDateTime, lat: Double, lon: Double, alt: Double)
+final case class Coordinates(id: Int, trackerId: Int, time: LocalDateTime, lat: Double, lon: Double, alt: Double, battery: Double)
 
 object Coordinates {
   implicit val encoder: Encoder[Coordinates] = deriveEncoder

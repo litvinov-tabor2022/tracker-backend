@@ -23,7 +23,7 @@ class EventsLogic(dao: Dao) {
         import coordinates._
 
         val time = LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.ofHours(1))
-        val coords = Coordinates(0, trackerId, time, lat, lon, alt)
+        val coords = Coordinates(0, trackerId, time, lat, lon, alt, battery)
 
         dao.updateVisitedWaypoints(trackerId, visitedWaypoints) >>
           dao.save(coords).as(coords)
@@ -36,7 +36,7 @@ class EventsLogic(dao: Dao) {
   }
 }
 
-final case class TrackerEvent(trackerId: Int, timestamp: Long, visitedWaypoints: Int, coordinates: TrackerCoordinates)
+final case class TrackerEvent(trackerId: Int, timestamp: Long, visitedWaypoints: Int, coordinates: TrackerCoordinates, battery: Double)
 
 object TrackerEvent {
   implicit val cc: Configuration = Configuration.default.withSnakeCaseMemberNames
