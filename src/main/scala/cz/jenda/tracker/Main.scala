@@ -1,20 +1,19 @@
 package cz.jenda.tracker
 
-import java.util.concurrent.{ForkJoinPool, TimeUnit}
-
 import cats.effect.{Clock, Resource}
 import com.avast.sst.bundle.MonixServerApp
 import com.avast.sst.doobie.DoobieHikariModule
 import com.avast.sst.http4s.server.Http4sBlazeServerModule
 import com.avast.sst.jvm.execution.ConfigurableThreadFactory.Config
-import com.avast.sst.jvm.execution.{ConfigurableThreadFactory, ExecutorModule}
+import com.avast.sst.jvm.execution.{ConfigurableThreadFactory, ExecutorModule, ThreadPoolExecutorConfig}
 import com.avast.sst.jvm.system.console.{Console, ConsoleModule}
 import com.avast.sst.pureconfig.PureConfigModule
 import cz.jenda.tracker.config.Configuration
-import cz.jenda.tracker.module.{Http4sRoutingModule, MqttModule}
+import cz.jenda.tracker.module.{Http4sRoutingModule, RabbitMQModule}
 import monix.eval.Task
 import org.http4s.server.Server
 
+import java.util.concurrent.{ForkJoinPool, TimeUnit}
 import scala.concurrent.ExecutionContext
 
 object Main extends MonixServerApp {
@@ -37,10 +36,16 @@ object Main extends MonixServerApp {
       doobieTransactor <- DoobieHikariModule.make[Task](config.database, boundedConnectExecutionContext, executorModule.blocker, None)
       dao = new Dao(doobieTransactor)
       logic = new EventsLogic(dao)
-      sub <- MqttModule.make(config.mqtt, logic.saveEvent)
+
+      rex <-
+        executorModule.makeThreadPoolExecutor(ThreadPoolExecutorConfig(1, 4), new ConfigurableThreadFactory(Config(Some("rabbitmq-%02d"))))
+      rabbit <- RabbitMQModule.make(config.rabbitmq, rex)
+
       routingModule = new Http4sRoutingModule(dao, executorModule.blocker)
       server <- Http4sBlazeServerModule.make[Task](config.server, routingModule.router, executorModule.executionContext)
-      _ <- Resource.eval(sub.connectAndAwait)
+      _ <- Resource.eval {
+        rabbit.eventsStream.evalMap(logic.saveEvent).compile.drain
+      }
     } yield server
   }
 

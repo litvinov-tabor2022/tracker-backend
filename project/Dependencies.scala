@@ -10,7 +10,9 @@ object Dependencies {
   val log4cats = "org.typelevel" %% "log4cats-slf4j" % "1.5.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.2.10"
   val mysql = "mysql" % "mysql-connector-java" % "8.0.28"
-  val mqttClient = "net.sigusr" %% "fs2-mqtt" % "0.5.1"
+  val rabbitmq = "com.avast.clients.rabbitmq" %% "rabbitmq-client-core" % Versions.rabbitmq
+  val rabbitmqPureconfig = "com.avast.clients.rabbitmq" %% "rabbitmq-client-pureconfig" % Versions.rabbitmq
+  val rabbitmqCirce = "com.avast.clients.rabbitmq" %% "rabbitmq-client-extras-circe" % Versions.rabbitmq
   val semanticDb = "org.scalameta" % "semanticdb-scalac_2.13.8" % "4.5.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "3.2.9"
   val scalafixScaluzzi = "com.github.vovapolu" %% "scaluzzi" % "0.1.20"
@@ -24,6 +26,7 @@ object Dependencies {
   object Versions {
     val circe = "0.14.1"
     val doobie = "0.13.4"
+    val rabbitmq = "9.0.0"
     val sst = "0.15.6"
     val silencer = "1.7.1"
   }
