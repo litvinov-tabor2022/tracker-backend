@@ -12,18 +12,31 @@ import java.time.{LocalDateTime, ZoneOffset}
 class EventsLogic(dao: Dao) {
   private val logger = Slf4jLogger.getLoggerFromClass[Task](classOf[EventsLogic])
 
+  // TODO analyze holes in the track
+
   def saveEvent(ev: StreamedDelivery[Task, TrackerEvent]): Task[Unit] = {
     ev.handleWith {
       case Delivery.Ok(ev, _, _) =>
         import ev._
         import coordinates._
 
-        val time = LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.ofHours(1))
-        val coords = Coordinates(0, trackerId, time, lat, lon, alt, battery)
+        // TODO publish metrics about battery etc.
 
-        (dao.updateVisitedWaypoints(trackerId, visitedWaypoints) >>
-          dao.save(coords).as(coords))
-          .flatMap(coords => logger.debug(s"Received new coordinates from tracker ID ${coords.trackerId}"))
+        val time = LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.ofHours(1))
+
+        dao
+          .getCurrentTrack(trackerId)
+          .flatMap {
+            case Some(rel) =>
+              import rel.trackId
+              val coords = Coordinates(0, trackId, time, lat, lon, alt, battery)
+
+              (dao.updateVisitedWaypoints(trackId, visitedWaypoints) >>
+                dao.save(coords).as(coords))
+                .flatMap(coords => logger.info(s"Received new coordinates from tracker ID $trackerId for track ID ${coords.trackId}"))
+
+            case None => logger.warn(s"Tracker ID $trackerId doesn't have assigned current track!")
+          }
           .as(DeliveryResult.Ack)
 
       case Delivery.MalformedContent(body, _, _, ce) =>

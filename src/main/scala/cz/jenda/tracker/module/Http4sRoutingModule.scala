@@ -17,10 +17,10 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
   private val routes = HttpRoutes.of[Task] {
     case GET -> Root / "status" => Ok("OK")
 
-    case GET -> Root / "trackers-list" =>
-      logger.info(s"Listing trackers")
+    case GET -> Root / "tracks-list" =>
+      logger.info(s"Listing tracks")
       dao
-        .listTrackers()
+        .listTracks()
         .flatMap(Ok(_))
         .map(
           _.withHeaders(
@@ -29,10 +29,10 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
           )
         )
 
-    case GET -> Root / "list" / "json" / IntVar(trackerId) =>
-      logger.info(s"Listing positions (as JSON) for tracker ID $trackerId") >>
+    case GET -> Root / "list" / "json" / IntVar(trackId) =>
+      logger.info(s"Listing positions (as JSON) for track ID $trackId") >>
         dao
-          .listCoordinatesFor(trackerId)
+          .listCoordinatesFor(trackId)
           .compile
           .toList
           .map(_.asJson)
@@ -44,12 +44,12 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
             )
           )
 
-    case GET -> Root / "list" / "gpx" / IntVar(trackerId) =>
-      logger.info(s"Listing positions (as GPX) for tracker ID $trackerId") >>
-        dao.getTracker(trackerId).flatMap {
-          case Some(tracker) =>
-            dao.listWaypointsFor(trackerId).flatMap { waypoints =>
-              Ok(dao.listCoordinatesFor(trackerId).through(GpxGenerator.createGpx(tracker, waypoints)))
+    case GET -> Root / "list" / "gpx" / IntVar(trackId) =>
+      logger.info(s"Listing positions (as GPX) for tracker ID $trackId") >>
+        dao.getTrack(trackId).flatMap {
+          case Some(track) =>
+            dao.listWaypointsFor(trackId).flatMap { waypoints =>
+              Ok(dao.listCoordinatesFor(trackId).through(GpxGenerator.createGpx(track, waypoints)))
                 .map(
                   _.withHeaders(
                     Header.ToRaw.keyValuesToRaw(("Content-Type", "application/gpx+xml")),
@@ -58,7 +58,7 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
                 )
             }
 
-          case None => NotFound(s"Tracker ID $trackerId not found")
+          case None => NotFound(s"Track ID $trackId not found")
         }
 
     case GET -> Root            => streamResource("index.html")

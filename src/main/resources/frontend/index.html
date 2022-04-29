@@ -21,15 +21,15 @@
         let json = JSON.parse(this.responseText)
 
         for (let i = 0; i < json.length; i++) {
-            let tracker = json[i];
+            let track = json[i];
 
             document.getElementById("content").innerHTML +=
-                '<a href="map.html?tracker=' + tracker.id + '">Mapa pro tracker ' + tracker.id + ' ('+tracker.name+')</a>'
+                '<a href="map.html?track=' + track.id + '">Mapa pro trasu ' + track.id + ' ('+track.name+')</a>'
         }
 
         console.log(json)
     }
-    xhttp.open("GET", "/trackers-list", true)
+    xhttp.open("GET", "/tracks-list", true)
     xhttp.send()
 </script>
 </body>

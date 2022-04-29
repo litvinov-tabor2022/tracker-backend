@@ -33,10 +33,10 @@ window.createMap = function () {
     const queryParams = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
     })
-    let trackerId = queryParams.tracker
+    let trackId = queryParams.track
 
-    if (trackerId === undefined) {
-        alert("Není vybrán žádný tracker!");
+    if (trackId === undefined) {
+        alert("Není vybrán žádný track!");
     }
 
     const xhttp = new XMLHttpRequest();
