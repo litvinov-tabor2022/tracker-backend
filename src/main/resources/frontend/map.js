@@ -5,31 +5,27 @@ window.loadMap = function () {
 
 let map;
 let markersLayer;
+let geometryLayer;
+
+let rootUrl = window.location.host
+
+let ssl = (window.location.protocol === "https:")
+let wsUrl = "ws" + (ssl ? "s" : "") + "://" + rootUrl + "/subscribe";
+
+console.log(wsUrl)
+
+let lineColor = "#f00"
+
+let wsSocket = new WebSocket(wsUrl)
+
+wsSocket.addEventListener('open', function (event) {
+    console.log('Server WS connected!');
+});
+
+let lastCoords;
+let lastPosMarker;
 
 window.createMap = function () {
-    // TODO better initial center
-    let center = SMap.Coords.fromWGS84(14.41790, 50.12655)
-    map = new SMap(JAK.gel("map"), center, 13)
-    map.addDefaultLayer(SMap.DEF_TURIST).enable()
-    map.addDefaultControls()
-
-    let sync = new SMap.Control.Sync({})
-    map.addControl(sync)
-
-    map.addDefaultLayer(SMap.DEF_OPHOTO);
-    map.addDefaultLayer(SMap.DEF_TURIST).enable();
-    map.addDefaultLayer(SMap.DEF_BASE);
-
-    let layerSwitch = new SMap.Control.Layer({width: 65, items: 4, page: 4});
-    layerSwitch.addDefaultLayer(SMap.DEF_BASE);
-    layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO);
-    layerSwitch.addDefaultLayer(SMap.DEF_TURIST);
-    map.addControl(layerSwitch, {left: "8px", top: "40px"});
-
-    markersLayer = new SMap.Layer.Marker()
-    map.addLayer(markersLayer)
-    markersLayer.enable()
-
     const queryParams = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
     })
@@ -42,6 +38,37 @@ window.createMap = function () {
     const xhttp = new XMLHttpRequest();
     xhttp.onload = function () {
         let xmlDoc = JAK.XML.createDocument(this.responseText)
+
+        let pts = xmlDoc.getElementsByTagName("trkpt")
+        let firstPoint = pts[0];
+        let lastPoint = pts[pts.length - 1];
+
+        // init map
+        let center = SMap.Coords.fromWGS84(lastPoint.getAttribute("lon"), lastPoint.getAttribute("lat"))
+        map = new SMap(JAK.gel("map"), center, 13)
+        map.addDefaultLayer(SMap.DEF_TURIST).enable()
+        map.addDefaultControls()
+
+        let sync = new SMap.Control.Sync({})
+        map.addControl(sync)
+
+        map.addDefaultLayer(SMap.DEF_TURIST).enable()
+        map.addDefaultLayer(SMap.DEF_OPHOTO)
+        map.addDefaultLayer(SMap.DEF_BASE)
+
+        let layerSwitch = new SMap.Control.Layer({width: 65, items: 3, page: 3})
+        layerSwitch.addDefaultLayer(SMap.DEF_BASE)
+        layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO)
+        layerSwitch.addDefaultLayer(SMap.DEF_TURIST)
+        map.addControl(layerSwitch, {left: "8px", top: "40px"})
+
+        markersLayer = new SMap.Layer.Marker()
+        map.addLayer(markersLayer)
+        markersLayer.enable()
+
+        geometryLayer = new SMap.Layer.Geometry()
+        map.addLayer(geometryLayer)
+        geometryLayer.enable()
 
         // draw all waypoints
         let wpts = xmlDoc.getElementsByTagName("wpt")
@@ -66,16 +93,51 @@ window.createMap = function () {
         }
 
         // waypoint representing current position
-        let pts = xmlDoc.getElementsByTagName("trkpt")
-        markersLayer.addMarker(makeMarkerFromTrackpoint(pts[pts.length - 1]))
+        lastPosMarker = makeMarkerFromTrackpoint(lastPoint);
+        markersLayer.addMarker(lastPosMarker)
+
+        lastCoords = SMap.Coords.fromWGS84(lastPoint.getAttribute("lon"), lastPoint.getAttribute("lat"))
 
         // pass the rest to draw the line
-        let gpx = new SMap.Layer.GPX(xmlDoc, null, {maxPoints: 5000, color: ["red"]})
+        let gpx = new SMap.Layer.GPX(xmlDoc, null, {maxPoints: 5000, colors: [lineColor]})
         map.addLayer(gpx)
         gpx.enable()
         gpx.fit()
+
+        wsSocket.addEventListener('message', function (event) {
+            if (event.data.startsWith("!!")) {
+                console.log('Message from server ' + event.data);
+                alert("WS: " + event.data)
+                return
+            }
+
+            let coords = JSON.parse(event.data)
+            console.log("Received new coords: " + JSON.stringify(coords))
+
+            let currentCoords = SMap.Coords.fromWGS84(coords.lon, coords.lat)
+
+            let points1 = [
+                currentCoords,
+                lastCoords
+            ]
+            let options1 = {
+                color: lineColor,
+                width: 4
+            }
+            let polyline = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, points1, options1)
+            geometryLayer.addGeometry(polyline)
+
+            // TODO change text too
+            lastPosMarker.setCoords(currentCoords)
+
+            lastCoords = currentCoords
+
+        });
+
+        wsSocket.send("coordinates/" + trackId)
     }
-    xhttp.open("GET", "/list/gpx/" + trackId, true)
+
+    xhttp.open("GET", window.location.protocol + "//" + rootUrl + "/list/gpx/" + trackId, true)
     xhttp.send()
 }
 

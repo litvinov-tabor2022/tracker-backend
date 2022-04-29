@@ -2,16 +2,29 @@ package cz.jenda.tracker.module
 
 import cats.effect.Blocker
 import com.avast.sst.http4s.server.Http4sRouting
-import cz.jenda.tracker.{Dao, GpxGenerator}
+import cz.jenda.tracker.Subscription.ForCoordinates
+import cz.jenda.tracker.{Dao, GpxGenerator, Subscriptions}
+import fs2.Pipe
 import io.circe.syntax._
 import monix.eval.Task
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import org.http4s.server.middleware.CORS
+import org.http4s.server.websocket.WebSocketBuilder
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.Text
 import org.http4s.{Header, HttpApp, HttpRoutes, Response}
+import org.typelevel.ci.CIString
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
+class Http4sRoutingModule(
+    dao: Dao,
+    allowedOrigins: List[CIString],
+    wsQueue: fs2.concurrent.Queue[Task, WebSocketFrame],
+    subscriptions: Subscriptions,
+    blocker: Blocker
+) extends Http4sDsl[Task] {
   private val logger = Slf4jLogger.getLoggerFromClass[Task](classOf[Http4sRoutingModule])
 
   private val routes = HttpRoutes.of[Task] {
@@ -45,7 +58,7 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
           )
 
     case GET -> Root / "list" / "gpx" / IntVar(trackId) =>
-      logger.info(s"Listing positions (as GPX) for tracker ID $trackId") >>
+      logger.info(s"Listing positions (as GPX) for track ID $trackId") >>
         dao.getTrack(trackId).flatMap {
           case Some(track) =>
             dao.listWaypointsFor(trackId).flatMap { waypoints =>
@@ -61,9 +74,28 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
           case None => NotFound(s"Track ID $trackId not found")
         }
 
+    case GET -> Root / "subscribe" =>
+      logger.info(s"Subscribing for updates") >>
+        WebSocketBuilder[Task].build(wsQueue.dequeue, subscribe)
+
     case GET -> Root            => streamResource("index.html")
     case GET -> Root / resource => streamResource(resource)
+  }
 
+  private val subscribe: Pipe[Task, WebSocketFrame, Unit] = {
+    _.evalMap {
+      case Text(str, _) =>
+        str.trim.split("/") match {
+          case Array(cmd, arg) if cmd == "coordinates" =>
+            val trackId = arg.toInt
+
+            logger.info(s"Subscribing for updates of track ID $trackId") >>
+              subscriptions.subscribe(ForCoordinates(trackId, coords => wsQueue.enqueue1(WebSocketFrame.Text(coords.asJson.noSpaces))))
+          case _ => logger.warn(s"Received invalid subscription request: '$str'")
+        }
+
+      case ev => logger.debug(s"WS event: $ev")
+    }
   }
 
   private def streamResource(name: String): Task[Response[Task]] = {
@@ -76,7 +108,7 @@ class Http4sRoutingModule(dao: Dao, blocker: Blocker) extends Http4sDsl[Task] {
   }
 
   val router: HttpApp[Task] = Http4sRouting.make {
-    routes
+    CORS.policy.withAllowMethodsAll.withAllowHeadersAll.withAllowOriginHostCi(allowedOrigins.contains)(routes)
   }
 
 }
