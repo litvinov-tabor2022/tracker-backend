@@ -75,7 +75,7 @@ window.createMap = function () {
         gpx.enable()
         gpx.fit()
     }
-    xhttp.open("GET", "/list/gpx/" + trackerId, true)
+    xhttp.open("GET", "/list/gpx/" + trackId, true)
     xhttp.send()
 }
 
