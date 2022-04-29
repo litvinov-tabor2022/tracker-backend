@@ -14,7 +14,8 @@ final case class Configuration(
     server: Http4sBlazeServerConfig,
     database: DoobieHikariConfig,
     boundedConnectExecutor: ThreadPoolExecutorConfig,
-    rabbitmq: RabbitMQModule.Configuration
+    rabbitmq: RabbitMQModule.Configuration,
+    allowedOrigins: List[String]
 )
 
 object Configuration {
