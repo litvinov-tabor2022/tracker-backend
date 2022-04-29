@@ -12,6 +12,7 @@
     </root>
 
     <logger name="com.avast.clients.rabbitmq" level="INFO"/>
+    <logger name="com.rabbitmq" level="INFO"/>
     <logger name="org.http4s" level="INFO"/>
     <logger name="com.zaxxer.hikari" level="INFO"/>
 </configuration>

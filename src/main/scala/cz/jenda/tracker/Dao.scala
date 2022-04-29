@@ -59,7 +59,7 @@ object Tracker {
   implicit val encoder: Encoder[Tracker] = deriveEncoder
 }
 
-final case class Track(id: Int, name: String, visitedWaypoints: Int)
+final case class Track(id: Int, trackerId: Int, name: String, visitedWaypoints: Int)
 
 object Track {
   implicit val encoder: Encoder[Track] = deriveEncoder
