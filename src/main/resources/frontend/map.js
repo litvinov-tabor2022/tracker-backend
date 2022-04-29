@@ -7,6 +7,7 @@ let map;
 let markersLayer;
 
 window.createMap = function () {
+    // TODO better initial center
     let center = SMap.Coords.fromWGS84(14.41790, 50.12655)
     map = new SMap(JAK.gel("map"), center, 13)
     map.addDefaultLayer(SMap.DEF_TURIST).enable()
@@ -16,17 +17,13 @@ window.createMap = function () {
     map.addControl(sync)
 
     map.addDefaultLayer(SMap.DEF_OPHOTO);
-    map.addDefaultLayer(SMap.DEF_TURIST);
-    map.addDefaultLayer(SMap.DEF_BASE).enable();
+    map.addDefaultLayer(SMap.DEF_TURIST).enable();
+    map.addDefaultLayer(SMap.DEF_BASE);
 
     let layerSwitch = new SMap.Control.Layer({width: 65, items: 4, page: 4});
     layerSwitch.addDefaultLayer(SMap.DEF_BASE);
     layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO);
     layerSwitch.addDefaultLayer(SMap.DEF_TURIST);
-    layerSwitch.addDefaultLayer(SMap.DEF_TURIST_WINTER);
-    layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0406);
-    layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO0203);
-    layerSwitch.addDefaultLayer(SMap.DEF_HISTORIC);
     map.addControl(layerSwitch, {left: "8px", top: "40px"});
 
     markersLayer = new SMap.Layer.Marker()
