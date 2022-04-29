@@ -73,7 +73,7 @@ window.createMap = function () {
         markersLayer.addMarker(makeMarkerFromTrackpoint(pts[pts.length - 1]))
 
         // pass the rest to draw the line
-        let gpx = new SMap.Layer.GPX(xmlDoc)
+        let gpx = new SMap.Layer.GPX(xmlDoc, null, {maxPoints: 5000, color: ["red"]})
         map.addLayer(gpx)
         gpx.enable()
         gpx.fit()
