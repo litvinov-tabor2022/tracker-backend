@@ -25,8 +25,7 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
   }
 
   def getCurrentTrack(trackerId: Int): Task[Option[CurrentTrackRelation]] = {
-    // TODO swap!!
-    sql"""select * from current_tracks where track_id = $trackerId""".query[CurrentTrackRelation].option.transact(doobieTransactor)
+    sql"""select * from current_tracks where tracker_id = $trackerId""".query[CurrentTrackRelation].option.transact(doobieTransactor)
   }
 
   def updateVisitedWaypoints(trackId: Int, visitedWaypoints: Int): Task[Unit] = {
