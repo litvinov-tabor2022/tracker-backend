@@ -24,6 +24,7 @@ wsSocket.addEventListener('open', function (event) {
 
 let lastCoords;
 let lastPosMarker;
+let lastPosMarkerCard;
 
 window.createMap = function () {
     const queryParams = new Proxy(new URLSearchParams(window.location.search), {
@@ -127,8 +128,8 @@ window.createMap = function () {
             let polyline = new SMap.Geometry(SMap.GEOMETRY_POLYLINE, null, points1, options1)
             geometryLayer.addGeometry(polyline)
 
-            // TODO change text too
             lastPosMarker.setCoords(currentCoords)
+            lastPosMarkerCard.getHeader().innerHTML = "<strong>" + coords.time + ", batt: " + coords.battery + "</strong>"
 
             lastCoords = currentCoords
 
@@ -142,9 +143,9 @@ window.createMap = function () {
 }
 
 function makeMarker(lat, lon, title, text, img) {
-    let card = new SMap.Card()
-    card.getHeader().innerHTML = "<strong>" + text + "</strong>"
-    card.getBody().innerHTML = ""
+    lastPosMarkerCard = new SMap.Card()
+    lastPosMarkerCard.getHeader().innerHTML = "<strong>" + text + "</strong>"
+    lastPosMarkerCard.getBody().innerHTML = ""
 
     let markerContent = JAK.mel("div")
     let pic = JAK.mel("img", {src: img})
@@ -164,7 +165,7 @@ function makeMarker(lat, lon, title, text, img) {
 
     let coords = SMap.Coords.fromWGS84(lon, lat);
     let marker = new SMap.Marker(coords, null, {url: markerContent});
-    marker.decorate(SMap.Marker.Feature.Card, card)
+    marker.decorate(SMap.Marker.Feature.Card, lastPosMarkerCard)
     return marker
 }
 
