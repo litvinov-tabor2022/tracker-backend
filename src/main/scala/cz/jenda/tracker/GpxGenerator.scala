@@ -22,6 +22,7 @@ object GpxGenerator {
        |""".stripMargin
   }
 
+  @SuppressWarnings(Array("Disable.toString"))
   private def header(trackName: String, now: LocalDateTime, waypoints: List[Waypoint], waypointsVisited: Int): String = {
     s"""<?xml version="1.0"?>
        |<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/0" version="1.0">

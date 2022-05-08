@@ -15,6 +15,7 @@ class Subscriptions {
     subscriptions.modify(l => (s :: l, ()))
   }
 
+  @SuppressWarnings(Array("DisableSyntax.=="))
   def newCoordinates(c: Coordinates): Task[Unit] = {
     subscriptions.get
       .map(_.collect { case ForCoordinates(trackId, enqueue) if trackId == c.trackId => enqueue })
@@ -31,5 +32,5 @@ class Subscriptions {
 sealed trait Subscription
 
 object Subscription {
-  case class ForCoordinates(trackId: Int, enqueue: Coordinates => Task[Unit]) extends Subscription
+  final case class ForCoordinates(trackId: Int, enqueue: Coordinates => Task[Unit]) extends Subscription
 }

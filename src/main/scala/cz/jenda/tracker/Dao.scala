@@ -68,7 +68,7 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
 }
 
 object Dao {
-  implicit val durationRead: Get[Duration] = Get[Int].map(Duration.ofSeconds(_))
+  implicit val durationRead: Get[Duration] = Get[Long].map(Duration.ofSeconds)
 }
 
 final case class Coordinates(id: Int, trackId: Int, time: LocalDateTime, lat: Double, lon: Double, alt: Double, battery: Float)

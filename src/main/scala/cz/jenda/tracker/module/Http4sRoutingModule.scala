@@ -110,6 +110,7 @@ class Http4sRoutingModule(
     case GET -> Root / resource => streamResource(resource)
   }
 
+  @SuppressWarnings(Array("DisableSyntax.=="))
   private val subscribe: Pipe[Task, WebSocketFrame, Unit] = {
     _.evalMap {
       case Text(str, _) =>

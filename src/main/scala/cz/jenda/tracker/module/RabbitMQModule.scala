@@ -13,7 +13,7 @@ import pureconfig.generic.semiauto.deriveReader
 import java.util.concurrent.ExecutorService
 import javax.net.ssl.SSLContext
 
-case class RabbitMQModule(eventsStream: fs2.Stream[Task, StreamedDelivery[Task, TrackerEvent]])
+final case class RabbitMQModule(eventsStream: fs2.Stream[Task, StreamedDelivery[Task, TrackerEvent]])
 
 object RabbitMQModule {
   def make(config: Configuration, ex: ExecutorService)(implicit ce: ConcurrentEffect[Task]): Resource[Task, RabbitMQModule] = {
@@ -25,7 +25,7 @@ object RabbitMQModule {
     }
   }
 
-  case class Configuration(connection: RabbitMQConnectionConfig, consumer: StreamingConsumerConfig)
+  final case class Configuration(connection: RabbitMQConnectionConfig, consumer: StreamingConsumerConfig)
 
   object Configuration {
     import com.avast.clients.rabbitmq.pureconfig.implicits._
