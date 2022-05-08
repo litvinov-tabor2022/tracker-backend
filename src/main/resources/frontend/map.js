@@ -22,15 +22,18 @@ wsSocket.addEventListener('open', function (event) {
     console.log('Server WS connected!');
 });
 
-let lastCoords;
-let lastPosMarker;
-let lastPosMarkerCard;
+let trackId
+let lastCoords
+let lastPosMarker
+let lastPosMarkerCard
+
+let mostCurrentCoordsSet = []
 
 window.createMap = function () {
     const queryParams = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
     })
-    let trackId = queryParams.track
+    trackId = queryParams.track
 
     if (trackId === undefined) {
         alert("Není vybrán žádný track!");
@@ -61,7 +64,7 @@ window.createMap = function () {
         layerSwitch.addDefaultLayer(SMap.DEF_BASE)
         layerSwitch.addDefaultLayer(SMap.DEF_OPHOTO)
         layerSwitch.addDefaultLayer(SMap.DEF_TURIST)
-        map.addControl(layerSwitch, {left: "8px", top: "40px"})
+        map.addControl(layerSwitch, {left: "8px", top: "53px"})
 
         markersLayer = new SMap.Layer.Marker()
         map.addLayer(markersLayer)
@@ -99,11 +102,18 @@ window.createMap = function () {
 
         lastCoords = SMap.Coords.fromWGS84(lastPoint.getAttribute("lon"), lastPoint.getAttribute("lat"))
 
+        // remember 50 most current coords
+        for (let i = 50; i >= 1; i--) {
+            let pt = pts[pts.length - i]
+            mostCurrentCoordsSet.push({lat: pt.getAttribute("lat"), lon: pt.getAttribute("lon")})
+        }
+
         // pass the rest to draw the line
         let gpx = new SMap.Layer.GPX(xmlDoc, null, {maxPoints: 5000, colors: [lineColor]})
         map.addLayer(gpx)
         gpx.enable()
-        gpx.fit()
+
+        locateToCurrent()
 
         wsSocket.addEventListener('message', function (event) {
             if (event.data.startsWith("!!")) {
@@ -114,6 +124,11 @@ window.createMap = function () {
 
             let coords = JSON.parse(event.data)
             console.log("Received new coords: " + JSON.stringify(coords))
+
+            if (coords.trackId !== trackId) {
+                console.log("Ignoring received coords - different track!")
+                return
+            }
 
             let currentCoords = SMap.Coords.fromWGS84(coords.lon, coords.lat)
 
@@ -133,6 +148,8 @@ window.createMap = function () {
 
             lastCoords = currentCoords
 
+            mostCurrentCoordsSet.push({lat: coords.lat, lon: coords.lon})
+            mostCurrentCoordsSet.shift(); // remove the oldest
         });
 
         wsSocket.send("coordinates/" + trackId)
@@ -185,4 +202,14 @@ function makeMarkerFromTrackpoint(trkpt) {
     // marker.decorate(SMap.Marker.Feature.RelativeAnchor, options)
 
     return marker
+}
+
+function locateToCurrent() {
+    let coords = []
+    for (const c of mostCurrentCoordsSet) {
+        coords.push(SMap.Coords.fromWGS84(c.lon, c.lat))
+    }
+    let r = map.computeCenterZoom(coords)
+    map.setCenter(r[0])
+    map.setZoom(r[1])
 }

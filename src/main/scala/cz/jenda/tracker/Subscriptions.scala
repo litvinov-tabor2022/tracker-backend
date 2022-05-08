@@ -11,6 +11,7 @@ class Subscriptions {
   private val subscriptions: Ref[Task, List[Subscription]] = Ref.unsafe(Nil)
 
   def subscribe(s: Subscription): Task[Unit] = {
+    // TODO timing-out subscriptions
     subscriptions.modify(l => (s :: l, ()))
   }
 

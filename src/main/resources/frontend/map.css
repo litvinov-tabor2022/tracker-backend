@@ -19,11 +19,11 @@ div#map {
 
 a#back {
     position: absolute;
-    top: 5px;
+    top: 18px;
     left: 8px;
 
     display: block;
-    width: 97px;
+    width: 47px;
     height: 20px;
     padding: 5px 8px 1px;
 
@@ -36,7 +36,7 @@ a#back {
     background-color: white;
 
     font-size: 14px;
-    text-align: center;
+    text-align: right;
     text-decoration: none;
 
     cursor: pointer;
@@ -58,5 +58,49 @@ span#back-icon {
     background-image: url("arrow_back_icon.png");
     background-size: 15px 15px;
     background-blend-mode: lighten;
+    background-repeat: no-repeat;
+}
+
+span#locate {
+    position: absolute;
+    top: 18px;
+    left: 80px;
+
+    display: block;
+    width: 25px;
+    height: 20px;
+    padding: 5px 8px 1px;
+
+    /*inset: 29px auto auto 8px;*/
+
+    border: 1px solid rgba(107, 117, 128, 0.3);
+    border-radius: 2px;
+
+    color: #6b7580;
+    background-color: white;
+
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    z-index: 10000000;
+    visibility: visible;
+}
+
+span#locate span {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 12px;
+    top: 5px;
+
+    opacity: 50%;
+
+    background-image: url("locate_icon.png");
+    background-size: 15px 15px;
+    background-blend-mode: darken;
     background-repeat: no-repeat;
 }
