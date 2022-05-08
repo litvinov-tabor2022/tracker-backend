@@ -31,16 +31,36 @@ class Http4sRoutingModule(
     case GET -> Root / "status" => Ok("OK")
 
     case GET -> Root / "tracks-list" =>
-      logger.info(s"Listing tracks")
-      dao
-        .listTracks()
-        .flatMap(Ok(_))
-        .map(
-          _.withHeaders(
-            Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json")),
-            Header.ToRaw.keyValuesToRaw(("Access-Control-Allow-Origin", "*"))
+      logger.debug(s"Listing tracks") >>
+        dao
+          .listTracks()
+          .flatMap(Ok(_))
+          .map(
+            _.withHeaders(
+              Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json"))
+            )
           )
-        )
+
+    case GET -> Root / "trackers-list" =>
+      logger.debug(s"Listing trackers") >>
+        dao
+          .listTrackers()
+          .flatMap(Ok(_))
+          .map(
+            _.withHeaders(
+              Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json"))
+            )
+          )
+
+    case GET -> Root / "track-assign" / IntVar(trackerId) / IntVar(trackId) =>
+      logger.info(s"Assigning track ID $trackId to tracker ID $trackerId") >>
+        dao.assignCurrentTrack(trackerId, trackId) >>
+        Ok()
+
+    case GET -> Root / "track-create" / IntVar(trackerId) / name =>
+      logger.info(s"Creating track '$name' for tracker ID $trackerId") >>
+        dao.createTrack(trackerId, name) >>
+        Ok()
 
     case GET -> Root / "list" / "json" / IntVar(trackId) =>
       logger.info(s"Listing positions (as JSON) for track ID $trackId") >>
@@ -52,8 +72,7 @@ class Http4sRoutingModule(
           .flatMap(Ok(_))
           .map(
             _.withHeaders(
-              Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json")),
-              Header.ToRaw.keyValuesToRaw(("Access-Control-Allow-Origin", "*"))
+              Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json"))
             )
           )
 
@@ -65,8 +84,7 @@ class Http4sRoutingModule(
               Ok(dao.listCoordinatesFor(trackId).through(GpxGenerator.createGpx(track, waypoints)))
                 .map(
                   _.withHeaders(
-                    Header.ToRaw.keyValuesToRaw(("Content-Type", "application/gpx+xml")),
-                    Header.ToRaw.keyValuesToRaw(("Access-Control-Allow-Origin", "*"))
+                    Header.ToRaw.keyValuesToRaw(("Content-Type", "application/gpx+xml"))
                   )
                 )
             }

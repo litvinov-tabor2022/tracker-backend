@@ -13,11 +13,15 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
   def save(nc: Coordinates): Task[Unit] = {
     import nc._
     sql"""insert into coordinates (track_id, time, lat, lon, alt, battery)
-         values ($trackId, $time, $lat, $lon, $alt, $battery)""".update.run.transact(doobieTransactor).as(())
+         values ($trackId, $time, $lat, $lon, $alt, $battery)""".update.run.transact(doobieTransactor).void
   }
 
   def listTracks(): Task[List[Track]] = {
     sql"""select * from tracks""".query[Track].stream.compile.toList.transact(doobieTransactor)
+  }
+
+  def listTrackers(): Task[List[Tracker]] = {
+    sql"""select * from trackers""".query[Tracker].stream.compile.toList.transact(doobieTransactor)
   }
 
   def getTrack(id: Int): Task[Option[Track]] = {
@@ -28,8 +32,16 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
     sql"""select * from current_tracks where tracker_id = $trackerId""".query[CurrentTrackRelation].option.transact(doobieTransactor)
   }
 
+  def assignCurrentTrack(trackerId: Int, trackId: Int): Task[Unit] = {
+    sql"""update current_tracks set track_id = $trackId where tracker_id = $trackerId""".update.run.transact(doobieTransactor).void
+  }
+
+  def createTrack(trackerId: Int, name: String): Task[Unit] = {
+    sql"""insert into tracks ( tracker_id, name) values ($trackerId, $name)""".update.run.transact(doobieTransactor).void
+  }
+
   def updateVisitedWaypoints(trackId: Int, visitedWaypoints: Int): Task[Unit] = {
-    sql"""update tracks set visited_waypoints = $visitedWaypoints where id = $trackId""".update.run.transact(doobieTransactor).as(())
+    sql"""update tracks set visited_waypoints = $visitedWaypoints where id = $trackId""".update.run.transact(doobieTransactor).void
   }
 
   def listCoordinatesFor(trackId: Int): fs2.Stream[Task, Coordinates] = {
