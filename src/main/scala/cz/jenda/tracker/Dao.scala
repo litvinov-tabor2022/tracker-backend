@@ -3,13 +3,15 @@ package cz.jenda.tracker
 import doobie.hikari
 import doobie.implicits._
 import doobie.implicits.javatimedrivernative._
+import doobie.util.Get
 import io.circe.Encoder
 import io.circe.generic.semiauto.deriveEncoder
 import monix.eval.Task
 
-import java.time.LocalDateTime
+import java.time.{Duration, LocalDateTime}
 
 class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
+
   def save(nc: Coordinates): Task[Unit] = {
     import nc._
     sql"""insert into coordinates (track_id, time, lat, lon, alt, battery)
@@ -56,6 +58,17 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
       .toList
       .transact(doobieTransactor)
   }
+
+  def analyzeTrack(trackId: Int): fs2.Stream[Task, TrackLag] = {
+    sql"""SELECT time, (LAG(time) OVER (ORDER BY time)) as prevTime FROM coordinates WHERE track_id = $trackId ORDER BY time"""
+      .query[TrackLag]
+      .stream
+      .transact(doobieTransactor)
+  }
+}
+
+object Dao {
+  implicit val durationRead: Get[Duration] = Get[Int].map(Duration.ofSeconds(_))
 }
 
 final case class Coordinates(id: Int, trackId: Int, time: LocalDateTime, lat: Double, lon: Double, alt: Double, battery: Float)
@@ -86,4 +99,11 @@ final case class Waypoint(id: Int, trackId: Int, seqId: Int, name: String, lat: 
 
 object Waypoint {
   implicit val encoder: Encoder[Waypoint] = deriveEncoder
+}
+
+final case class TrackLag(time: LocalDateTime, prevTime: Option[LocalDateTime])
+
+object TrackLag {
+
+  implicit val encoder: Encoder[TrackLag] = deriveEncoder
 }

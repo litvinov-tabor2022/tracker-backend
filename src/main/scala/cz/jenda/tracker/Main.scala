@@ -40,12 +40,16 @@ object Main extends MonixServerApp {
       subscriptions = new Subscriptions
       logic = new EventsLogic(dao, subscriptions)
 
-      rex <-
-        executorModule.makeThreadPoolExecutor(ThreadPoolExecutorConfig(1, 4), new ConfigurableThreadFactory(Config(Some("rabbitmq-%02d"))))
+      rex <- executorModule.makeThreadPoolExecutor(
+        ThreadPoolExecutorConfig(1, 4),
+        new ConfigurableThreadFactory(Config(Some("rabbitmq-%02d")))
+      )
       rabbit <- RabbitMQModule.make(config.rabbitmq, rex)
 
       wsQueue <- Resource.eval(fs2.concurrent.Queue.unbounded[Task, WebSocketFrame])
-      routingModule = new Http4sRoutingModule(dao, config.allowedOrigins.map(CIString(_)), wsQueue, subscriptions, executorModule.blocker)
+      analytics = new Analytics(dao)
+      allowedOrigins = config.allowedOrigins.map(CIString(_))
+      routingModule = new Http4sRoutingModule(dao, analytics, allowedOrigins, wsQueue, subscriptions, executorModule.blocker)
       server <- Http4sBlazeServerModule.make[Task](config.server, routingModule.router, executorModule.executionContext)
       _ <- Resource.eval {
         rabbit.eventsStream.evalMap(logic.saveEvent).compile.drain

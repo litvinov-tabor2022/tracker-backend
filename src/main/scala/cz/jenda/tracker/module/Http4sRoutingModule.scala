@@ -3,8 +3,9 @@ package cz.jenda.tracker.module
 import cats.effect.Blocker
 import com.avast.sst.http4s.server.Http4sRouting
 import cz.jenda.tracker.Subscription.ForCoordinates
-import cz.jenda.tracker.{Dao, GpxGenerator, Subscriptions}
+import cz.jenda.tracker.{Analytics, Dao, GpxGenerator, Subscriptions}
 import fs2.Pipe
+import fs2.text.utf8Encode
 import io.circe.syntax._
 import monix.eval.Task
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
@@ -20,6 +21,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 class Http4sRoutingModule(
     dao: Dao,
+    analytics: Analytics,
     allowedOrigins: List[CIString],
     wsQueue: fs2.concurrent.Queue[Task, WebSocketFrame],
     subscriptions: Subscriptions,
@@ -95,6 +97,14 @@ class Http4sRoutingModule(
     case GET -> Root / "subscribe" =>
       logger.info(s"Subscribing for updates") >>
         WebSocketBuilder[Task].build(wsQueue.dequeue, subscribe)
+
+    case GET -> Root / "analyze" / IntVar(trackId) =>
+      logger.info(s"Analyzing track ID $trackId") >>
+        Ok(analytics.analyze(trackId).through(utf8Encode)).map(
+          _.withHeaders(
+            Header.ToRaw.keyValuesToRaw(("Content-Type", "text/plain; charset=utf-8"))
+          )
+        )
 
     case GET -> Root            => streamResource("index.html")
     case GET -> Root / resource => streamResource(resource)
