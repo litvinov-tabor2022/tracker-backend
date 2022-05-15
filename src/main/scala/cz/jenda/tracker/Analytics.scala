@@ -1,13 +1,15 @@
 package cz.jenda.tracker
 
-import cz.jenda.tracker.Analytics.{DF, WarningThreshold}
+import cz.jenda.tracker.Analytics.{DF, DefaultWarningThreshold}
 import monix.eval.Task
 
 import java.time.format.DateTimeFormatter
 import java.time.{Duration, LocalDateTime, ZoneOffset}
 
 class Analytics(dao: Dao) {
-  def analyze(trackId: Int): fs2.Stream[Task, String] = {
+  def analyze(trackId: Int, threshold: Option[Long]): fs2.Stream[Task, String] = {
+    val finalThreshold = threshold.map(Duration.ofSeconds).getOrElse(DefaultWarningThreshold)
+
     fs2.Stream.eval {
       dao.getTrack(trackId).map {
         case Some(track) =>
@@ -17,7 +19,7 @@ class Analytics(dao: Dao) {
               dao
                 .analyzeTrack(trackId)
                 .collect {
-                  case tl if tl.prevTime.exists(pt => Duration.between(pt, tl.time).compareTo(WarningThreshold) >= 0) =>
+                  case tl if tl.prevTime.exists(pt => Duration.between(pt, tl.time).compareTo(finalThreshold) >= 0) =>
                     val prevTime = tl.prevTime.getOrElse(sys.error("Should not get here"))
                     val delay = Duration.between(prevTime, tl.time)
 
@@ -39,8 +41,7 @@ class Analytics(dao: Dao) {
 }
 
 object Analytics {
-  final val WarningThreshold: Duration = Duration.ofMinutes(2)
-  final val ErrorThreshold: Duration = Duration.ofMinutes(5)
+  final val DefaultWarningThreshold: Duration = Duration.ofMinutes(2)
 
   private val DF: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
 }

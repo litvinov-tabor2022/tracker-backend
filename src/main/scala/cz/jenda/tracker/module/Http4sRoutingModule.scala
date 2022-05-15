@@ -3,6 +3,7 @@ package cz.jenda.tracker.module
 import cats.effect.Blocker
 import com.avast.sst.http4s.server.Http4sRouting
 import cz.jenda.tracker.Subscription.ForCoordinates
+import cz.jenda.tracker.module.Http4sRoutingModule.ThresholdSecs
 import cz.jenda.tracker.{Analytics, Dao, GpxGenerator, Subscriptions}
 import fs2.Pipe
 import fs2.text.utf8Encode
@@ -11,6 +12,7 @@ import monix.eval.Task
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import org.http4s.dsl.io.OptionalQueryParamDecoderMatcher
 import org.http4s.server.middleware.CORS
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
@@ -98,9 +100,9 @@ class Http4sRoutingModule(
       logger.info(s"Subscribing for updates") >>
         WebSocketBuilder[Task].build(wsQueue.dequeue, subscribe)
 
-    case GET -> Root / "analyze" / IntVar(trackId) =>
+    case GET -> Root / "analyze" / IntVar(trackId) :? ThresholdSecs(ts) =>
       logger.info(s"Analyzing track ID $trackId") >>
-        Ok(analytics.analyze(trackId).through(utf8Encode)).map(
+        Ok(analytics.analyze(trackId, ts).through(utf8Encode)).map(
           _.withHeaders(
             Header.ToRaw.keyValuesToRaw(("Content-Type", "text/plain; charset=utf-8"))
           )
@@ -139,5 +141,8 @@ class Http4sRoutingModule(
   val router: HttpApp[Task] = Http4sRouting.make {
     CORS.policy.withAllowMethodsAll.withAllowHeadersAll.withAllowOriginHostCi(allowedOrigins.contains)(routes)
   }
+}
 
+object Http4sRoutingModule {
+  private object ThresholdSecs extends OptionalQueryParamDecoderMatcher[Long]("threshold")
 }
