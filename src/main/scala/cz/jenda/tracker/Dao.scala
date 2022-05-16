@@ -38,8 +38,14 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
     sql"""update current_tracks set track_id = $trackId where tracker_id = $trackerId""".update.run.transact(doobieTransactor).void
   }
 
-  def createTrack(trackerId: Int, name: String): Task[Unit] = {
-    sql"""insert into tracks ( tracker_id, name) values ($trackerId, $name)""".update.run.transact(doobieTransactor).void
+  def createTrack(trackerId: Int, name: String): Task[Track] = {
+    sql"""insert into tracks ( tracker_id, name) values ($trackerId, $name)""".update.run.transact(doobieTransactor).void >> {
+      sql"""select * from tracks where name = $name"""
+        .query[Track]
+        .option
+        .transact(doobieTransactor)
+        .map(_.getOrElse(throw new IllegalStateException("The track must exist!")))
+    }
   }
 
   def updateVisitedWaypoints(trackId: Int, visitedWaypoints: Int): Task[Unit] = {

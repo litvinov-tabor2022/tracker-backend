@@ -59,8 +59,9 @@ List of available tracks.
 `GET /trackers-list`  
 List of available trackers.
 
-`GET /track-create/${trackerId}/${name}`  
-Create new track with ${name}, available for tracker ${trackerId}.
+`GET /track-create/${trackerId}/${name}?assign=${assignCurrent}`  
+Create new track with ${name}, available for tracker ${trackerId}. The `assign` param determines whether the track should be directly
+assigned as current to the related tracker.
 
 `GET /track-assign/${trackerId}/${trackId}`  
 Assign ${trackId} to ${trackerId} as a current track.
@@ -71,8 +72,8 @@ Download track ${trackId} in GPX format.
 `GET /list/json/${trackId}`  
 Download track ${trackId} in JSON format (array of coordinates).
 
-`GET /analyze/${trackId}`  
-Analyze gaps in the track.
+`GET /analyze/${trackId}?threshold=${thresholdSecs}`  
+Analyze gaps in the track. The `threshold` query param is optional with a default value of 120s.
 
 `GET /subscribe`  
 WS endpoint for receiving updates. After calling this, client has to subscribe for particular stuff by sending a command.

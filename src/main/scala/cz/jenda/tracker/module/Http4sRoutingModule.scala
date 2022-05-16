@@ -3,7 +3,7 @@ package cz.jenda.tracker.module
 import cats.effect.Blocker
 import com.avast.sst.http4s.server.Http4sRouting
 import cz.jenda.tracker.Subscription.ForCoordinates
-import cz.jenda.tracker.module.Http4sRoutingModule.ThresholdSecs
+import cz.jenda.tracker.module.Http4sRoutingModule.{Assign, ThresholdSecs}
 import cz.jenda.tracker.{Analytics, Dao, GpxGenerator, Subscriptions}
 import fs2.Pipe
 import fs2.text.utf8Encode
@@ -61,10 +61,16 @@ class Http4sRoutingModule(
         dao.assignCurrentTrack(trackerId, trackId) >>
         Ok()
 
-    case GET -> Root / "track-create" / IntVar(trackerId) / name =>
+    case GET -> Root / "track-create" / IntVar(trackerId) / name :? Assign(assign) =>
       logger.info(s"Creating track '$name' for tracker ID $trackerId") >>
-        dao.createTrack(trackerId, name) >>
-        Ok()
+        dao.createTrack(trackerId, name).flatMap { track =>
+          val ass = if (assign.getOrElse(false)) {
+            logger.info(s"Assigning created track ID ${track.id} to tracker ID $trackerId") >>
+              dao.assignCurrentTrack(trackerId, track.id)
+          } else Task.unit
+
+          ass >> Ok(track)
+        }
 
     case GET -> Root / "list" / "json" / IntVar(trackId) =>
       logger.info(s"Listing positions (as JSON) for track ID $trackId") >>
@@ -145,4 +151,5 @@ class Http4sRoutingModule(
 
 object Http4sRoutingModule {
   private object ThresholdSecs extends OptionalQueryParamDecoderMatcher[Long]("threshold")
+  private object Assign extends OptionalQueryParamDecoderMatcher[Boolean]("assign")
 }
