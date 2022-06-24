@@ -23,11 +23,15 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
   }
 
   def listTrackers(): Task[List[Tracker]] = {
-    sql"""select * from trackers""".query[Tracker].stream.compile.toList.transact(doobieTransactor)
+    sql"""select trackers.*, tr.* from trackers join current_tracks as ct on ct.tracker_id = trackers.id join tracks as tr on ct.track_id = tr.id""".stripMargin.query[Tracker].stream.compile.toList.transact(doobieTransactor)
   }
 
   def getTrack(id: Int): Task[Option[Track]] = {
     sql"""select * from tracks where id = $id""".query[Track].option.transact(doobieTransactor)
+  }
+
+  def getTracker(id: Int): Task[Option[Tracker]] = {
+    sql"""select trackers.*, tr.* from trackers join current_tracks as ct on ct.tracker_id = trackers.id join tracks as tr on ct.track_id = tr.id where trackers.id = $id""".query[Tracker].option.transact(doobieTransactor)
   }
 
   def getCurrentTrack(trackerId: Int): Task[Option[CurrentTrackRelation]] = {
@@ -83,7 +87,7 @@ object Coordinates {
   implicit val encoder: Encoder[Coordinates] = deriveEncoder
 }
 
-final case class Tracker(id: Int, name: String)
+final case class Tracker(id: Int, name: String, track: Option[Track])
 
 object Tracker {
   implicit val encoder: Encoder[Tracker] = deriveEncoder

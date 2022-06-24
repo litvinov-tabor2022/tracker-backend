@@ -69,7 +69,7 @@ class Http4sRoutingModule(
               dao.assignCurrentTrack(trackerId, track.id)
           } else Task.unit
 
-          ass >> Ok(track)
+          ass >> Ok(dao.getTracker(trackerId))
         }
 
     case GET -> Root / "list" / "json" / IntVar(trackId) =>
