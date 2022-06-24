@@ -86,6 +86,20 @@ class Http4sRoutingModule(
             )
           )
 
+    case GET -> Root / "last" / "json" / IntVar(trackId) =>
+      logger.info(s"Getting last position (as JSON) for track ID $trackId") >>
+        dao.lastCoordinatesFor(trackId).flatMap {
+          case Some(coords) =>
+            Ok(coords.asJson)
+              .map(
+                _.withHeaders(
+                  Header.ToRaw.keyValuesToRaw(("Content-Type", "application/json"))
+                )
+              )
+
+          case None => NotFound("Track not found")
+        }
+
     case GET -> Root / "list" / "gpx" / IntVar(trackId) =>
       logger.info(s"Listing positions (as GPX) for track ID $trackId") >>
         dao.getTrack(trackId).flatMap {

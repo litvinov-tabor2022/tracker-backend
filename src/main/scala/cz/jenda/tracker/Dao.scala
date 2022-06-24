@@ -60,6 +60,13 @@ class Dao(doobieTransactor: hikari.HikariTransactor[Task]) {
     sql"""select * from coordinates where track_id = $trackId order by time""".query[Coordinates].stream.transact(doobieTransactor)
   }
 
+  def lastCoordinatesFor(trackId: Int): Task[Option[Coordinates]] = {
+    sql"""select * from coordinates where track_id = $trackId order by time desc limit 1"""
+      .query[Coordinates]
+      .option
+      .transact(doobieTransactor)
+  }
+
   def listWaypointsFor(trackId: Int): Task[List[Waypoint]] = {
     sql"""select * from waypoints where track_id = $trackId order by seq_id"""
       .query[Waypoint]
